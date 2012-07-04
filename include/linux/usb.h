@@ -340,6 +340,11 @@ struct usb_bus {
 					 * B-device is disconnected.
 					 */
 	struct delayed_work hnp_polling;/* OTG: HNP polling work */
+	unsigned no_stop_on_short:1;    /*
+					 * Quirk: some controllers don't stop
+					 * the ep queue on a short transfer
+					 * with the URB_SHORT_NOT_OK flag set.
+					 */
 	unsigned sg_tablesize;		/* 0 or largest number of sg list entries */
 
 	int devnum_next;		/* Next open device number in
