@@ -1055,6 +1055,20 @@ static int proc_bulk(struct dev_state *ps, void __user *arg)
 	return ret;
 }
 
+static void check_reset_of_active_ep(struct usb_device *udev,
+		unsigned int epnum, char *ioctl_name)
+{
+	struct usb_host_endpoint **eps;
+	struct usb_host_endpoint *ep;
+
+	eps = (epnum & USB_DIR_IN) ? udev->ep_in : udev->ep_out;
+	ep = eps[epnum & 0x0f];
+	if (ep && !list_empty(&ep->urb_list))
+		dev_warn(&udev->dev, "Process %d (%s) called USBDEVFS_%s for active endpoint 0x%02x\n",
+				task_pid_nr(current), current->comm,
+				ioctl_name, epnum);
+}
+
 static int proc_resetep(struct dev_state *ps, void __user *arg)
 {
 	unsigned int ep;
@@ -1068,6 +1082,7 @@ static int proc_resetep(struct dev_state *ps, void __user *arg)
 	ret = checkintf(ps, ret);
 	if (ret)
 		return ret;
+	check_reset_of_active_ep(ps->dev, ep, "RESETEP");
 	usb_reset_endpoint(ps->dev, ep);
 	return 0;
 }
@@ -1086,6 +1101,7 @@ static int proc_clearhalt(struct dev_state *ps, void __user *arg)
 	ret = checkintf(ps, ret);
 	if (ret)
 		return ret;
+	check_reset_of_active_ep(ps->dev, ep, "CLEAR_HALT");
 	if (ep & USB_DIR_IN)
 		pipe = usb_rcvbulkpipe(ps->dev, ep & 0x7f);
 	else
