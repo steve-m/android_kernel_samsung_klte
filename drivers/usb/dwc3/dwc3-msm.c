@@ -1922,6 +1922,9 @@ static int dwc3_msm_suspend(struct dwc3_msm *mdwc)
 							 0x18000, 0x18000);
 		dwc3_msm_write_reg(mdwc->base, ALT_INTERRUPT_EN_REG, 0xFC0);
 		udelay(5);
+
+		/* disable redriver IC for USB3.0 */
+		gpio_set_value(sec_qcom_usb_rdrv,0);
 	} else {
 #ifdef CONFIG_USB_DEBUG_DETEAILED_LOG
 		dev_info(mdwc->dev, "%s: low power state\n", __func__);
@@ -2111,6 +2114,10 @@ static int dwc3_msm_resume(struct dwc3_msm *mdwc)
 		/* Bring PHY out of suspend */
 		dwc3_msm_write_readback(mdwc->base, HS_PHY_CTRL_REG, 0xC00000,
 									0x0);
+
+		/* set gpio to enable redriver IC for USB3.0 when entering
+		 * OTG host mode */
+		gpio_set_value(sec_qcom_usb_rdrv,1);
 
 	}
 
@@ -3277,7 +3284,7 @@ static int __devinit dwc3_msm_probe(struct platform_device *pdev)
 	/* set gpio to enable redriver for USB3.0 */
 	gpio_tlmm_config(GPIO_CFG(sec_qcom_usb_rdrv, 0, GPIO_CFG_OUTPUT,
 					GPIO_CFG_NO_PULL, GPIO_CFG_2MA), 1);
-	gpio_set_value(sec_qcom_usb_rdrv,0);
+	gpio_set_value(sec_qcom_usb_rdrv,1);
 #endif
 
 		/* Skip charger detection for simulator targets */
